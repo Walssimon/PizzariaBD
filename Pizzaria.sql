@@ -1,3 +1,7 @@
+--Walssimon do Santos Silva Sacramento e Wersington do Santos Silva Sacramento
+
+DROP database pizzaria;
+
 CREATE database pizzaria;
 
 use pizzaria;
@@ -77,11 +81,11 @@ VALUES(1, 'Coca Cola' , 3, '13.00'),
 
 INSERT INTO pedidos 
 
-VALUES(1, 2023-05-09,3),
-(2, 2023-05-08,2),
-(3, 2023-04-16,4),
-(4, 2023-04-23,5),
-(5, 2023-04-30,1);
+VALUES(1, "20230509",3),
+(2, "20230508",2),
+(3, "20230416",4),
+(4, "20230423",5),
+(5, "20230430",1);
 
 INSERT INTO pizzaspedidas
 
@@ -90,4 +94,67 @@ VALUES(1,3,3),
 (1,1,1),
 (2,2,3),
 (2,4,1),
---////////////////////////////////////////////////////////////////////////////
+(2,1,1),
+(3,5,2),
+(3,4,1),
+(4,3,2),
+(4,5,2),
+(4,2,1),
+(5,1,3),
+(5,3,1);
+
+
+INSERT INTO bebidaspedidas
+
+VALUES(1,1,1),
+(2,2,1),
+(3,3,1),
+(4,3,1),
+(5,1,1);
+
+CREATE TEMPORARY TABLE tmp_subtotalpizza (
+nomepizza VARCHAR (150) NOT NULL,
+subtotal DECIMAL(6,2) NOT NULL
+);
+
+INSERT INTO tmp_subtotalpizza (nomepizza, subtotal)
+SELECT pi.nomepizza,
+quantidade * pi.precopizza AS subtotal
+FROM pizzas pi INNER JOIN pizzaspedidas pp INNER JOIN pedidos p ON pp.codpedido= p.codpedido
+GROUP BY pi.nomepizza
+ORDER BY pi.nomepizza;
+
+SELECT * FROM tmp_subtotalpizza;
+
+DROP TABLE tmp_subtotalbebida;
+
+CREATE TEMPORARY TABLE tmp_subtotalbebida (
+nomebebida VARCHAR (150) NOT NULL,
+codpedido INT NOT NULL,
+subtotalbebida DECIMAL(6,2) NOT NULL
+);
+
+INSERT INTO tmp_subtotalbebida (nomebebida,codpedido, subtotalbebida)
+SELECT be.nomebebida, p.codpedido,
+be.precobebida * bp.quantidade AS subtotalbebida
+FROM bebidas be INNER JOIN (pedidos p INNER JOIN bebidaspedidas bp ON p.codpedido = bp.codpedido) ON be.codbebidas = bp.codbebidas
+ORDER BY p.codpedido;
+
+SELECT * FROM tmp_subtotalbebida;
+
+CREATE TEMPORARY TABLE tmp_pedido AS
+SELECT pedidos.codpedido, pedidos.datapedido, clientes.nomecliente,
+       SUM(bebidas.precobebida * bebidaspedidas.quantidade) + 
+       SUM(pizzas.precopizza * pizzaspedidas.quantidade) AS totalgeral
+FROM pedidos
+JOIN clientes ON pedidos.codcliente = clientes.codcliente
+LEFT JOIN pizzaspedidas ON pedidos.codpedido = pizzaspedidas.codpedido
+LEFT JOIN pizzas ON pizzaspedidas.codpizza = Pizzas.codpizza
+LEFT JOIN bebidaspedidas ON pedidos.codpedido = bebidaspedidas.codpedido
+LEFT JOIN bebidas ON bebidaspedidas.codbebidas = bebidas.codbebidas
+GROUP BY pedidos.codpedido;
+
+
+
+SELECT * FROM tmp_pedido;
+
